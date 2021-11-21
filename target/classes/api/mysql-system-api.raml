@@ -1,0 +1,78 @@
+#%RAML 1.0
+title: mysql-system-api
+
+types:
+  AccountDataType: !include exchange_modules/190e64e1-3504-44e9-aff9-7afb8f835b1e/account-datatype/1.0.1/account-datatype.raml
+  BatchAPIResponseDataType: !include exchange_modules/190e64e1-3504-44e9-aff9-7afb8f835b1e/batch-api-response-datatype/1.0.0/batch-api-response-datatype.raml
+
+
+/accounts:
+  get:
+    queryParameters:
+       LastModifiedDate:
+        type: string
+        required: true
+       LastModifiedById:
+         type: string
+    responses:
+      200:
+        body:
+          application/json:
+            type: AccountDataType[]
+            example: !include exchange_modules/190e64e1-3504-44e9-aff9-7afb8f835b1e/account-array-example/1.0.0/account-array-example.raml
+  post:
+    body:
+      application/json:
+        type: AccountDataType[]
+        example: !include exchange_modules/190e64e1-3504-44e9-aff9-7afb8f835b1e/account-array-example/1.0.0/account-array-example.raml
+    responses:
+      201:
+        body:
+          application/json:
+            type: BatchAPIResponseDataType[]
+            example: !include exchange_modules/190e64e1-3504-44e9-aff9-7afb8f835b1e/batch-api-success-response/1.0.0/batch-api-success-response.raml
+      500:
+        body:
+          application/json:
+            type: BatchAPIResponseDataType[]
+            example: !include exchange_modules/190e64e1-3504-44e9-aff9-7afb8f835b1e/batch-api-failure-response/1.0.0/batch-api-failure-response.raml
+
+  put:
+    body:
+      application/json:
+        type: AccountDataType[]
+        example: !include exchange_modules/190e64e1-3504-44e9-aff9-7afb8f835b1e/account-array-example/1.0.0/account-array-example.raml
+    responses:
+      201:
+        body:
+          application/json:
+            type: BatchAPIResponseDataType[]
+            example: !include exchange_modules/190e64e1-3504-44e9-aff9-7afb8f835b1e/batch-api-success-response/1.0.0/batch-api-success-response.raml
+      500:
+        body:
+          application/json:
+            type: BatchAPIResponseDataType[]
+            example: !include exchange_modules/190e64e1-3504-44e9-aff9-7afb8f835b1e/batch-api-failure-response/1.0.0/batch-api-failure-response.raml
+  /lastModifiedDate:
+    get:
+      responses:
+        200:
+          body:
+            application/json:
+              example:
+                LastModifiedDate: "2021-11-19T08:17:04"
+                                
+  /name:
+    get:
+      queryParameters:
+        accountName:
+          type: string
+          required: true
+      responses:
+        200:
+          body:
+            application/json:
+              example:
+                Id: "abc1234"
+                LastModifiedDate: "15-11-2021"
+                

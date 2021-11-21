@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd ">
+    <munit:config name="mysql-system-api-apikit-test.xml" />
+    <http:request-config name="HTTP_Request_Configuration" basePath="/api">
+        <http:request-connection host="localhost" port="8081" />
+    </http:request-config>
+    <munit:test name="get:\accounts:mysql-system-api-config-200-application\json-FlowTest" description="Verifying functionality of [get:\accounts:mysql-system-api-config-200-application\json]">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="mysql-system-api-main" />
+            <munit:enable-flow-source value="get:\accounts:mysql-system-api-config" />
+        </munit:enable-flow-sources>
+        <munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="8cd302be-7403-4aad-88cc-8f71753842df" processor="db:select">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="156e6ce5-a1a3-4545-a1b2-47f9d3ae07f8" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value='#[MunitTools::getResourceAsString("scaffolder/response/get_200_accounts_application_json.json")]' mediaType="application/dw" />
+					<munit-tools:attributes value="#[{'statusCode' : 200}]" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Event" doc:id="8fbaee14-9268-4ada-b862-14ccaab59644" >
+				<munit:attributes value="#[{queryParams: {'LastModifiedDate' : '2021-11-16T22:25:27', 'LastModifiedById' : 'sfuser@localhost'} }]" />
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution>
+			<flow-ref doc:name="getModifiedAccountsFlow" doc:id="efa7daa9-57e5-43a6-99bc-d3cb62aac66e" name="getModifiedAccountsFlow"/>
+        </munit:execution>
+		<munit:validation>
+            <munit-tools:assert-that expression="#[attributes.statusCode]" is="#[MunitTools::equalTo(200)]" message="The HTTP Status code is not correct!" doc:name="Assert That Status Code is 200" />
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" message="The response payload is not correct!" doc:name="Assert That - Payload is Expected" />
+        </munit:validation>
+    </munit:test>
+    <munit:test name="put:\accounts:application\json:mysql-system-api-config-200-application\json-FlowTest" description="Verifying functionality of [put:\accounts:application\json:mysql-system-api-config-201-application\json]">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="mysql-system-api-main" />
+            <munit:enable-flow-source value="put:\accounts:application\json:mysql-system-api-config" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+            <munit-tools:mock-when doc:name="Mock when" doc:id="810e279a-a21f-4e68-af14-19f1c8461dae" processor="db:bulk-update">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="dbb5dc15-a812-4f9e-a16a-3c28366698e2" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value='#[MunitTools::getResourceAsString("scaffolder/response/put_200_accounts_application_json.json")]' mediaType="application/dw" />
+					<munit-tools:attributes value="#[{'statusCode' : 200}]" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Event" doc:id="d0baddf1-a6ec-4085-8bb5-2d656c1902d7" >
+				<munit:payload value="#[MunitTools::getResourceAsString('scaffolder/request/put_accounts_application_json.json')]" mediaType="application/dw" />
+			</munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+			<flow-ref doc:name="putAccountsFlow" doc:id="d7af4c53-df01-477e-a70d-286e6cd0081e" name="putAccountsFlow"/>
+        </munit:execution>
+		<munit:validation>
+            <munit-tools:assert-that expression="#[attributes.statusCode]" is="#[MunitTools::equalTo(200)]" message="The HTTP Status code is not correct!" doc:name="Assert That Status Code is 200" />
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" message="The response payload is not correct!" doc:name="Assert That - Payload is Expected" />
+        </munit:validation>
+    </munit:test>
+    <munit:test name="put:\accounts:application\json:mysql-system-api-config-500-application\json-FlowTest" description="Verifying functionality of [put:\accounts:application\json:mysql-system-api-config-500-application\json]" expectedErrorType="DB:CONNECTIVITY">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="mysql-system-api-main" />
+            <munit:enable-flow-source value="put:\accounts:application\json:mysql-system-api-config" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+            <munit-tools:mock-when doc:name="Mock when" doc:id="59eb4a30-14d3-47fe-b255-4d20ba2fe2f9" processor="db:bulk-update">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="dbb5dc15-a812-4f9e-a16a-3c28366698e2" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="DB:CONNECTIVITY" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Event" doc:id="8a1d29b7-f40c-4de4-8276-a24837e49500" >
+				<munit:payload value="#[MunitTools::getResourceAsString('scaffolder/request/put_accounts_application_json.json')]" mediaType="application/dw" />
+			</munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+			<flow-ref doc:name="putAccountsFlow" doc:id="4b96a4d9-0c13-4a38-937f-685981ec1bc2" name="putAccountsFlow"/>
+        </munit:execution>
+		<munit:validation>
+            <munit-tools:assert-that expression="#[payload.status]" is="#[MunitTools::equalTo('Failed')]" message="The response payload is not correct!" doc:name="Assert That - Payload is Expected" />
+        </munit:validation>
+    </munit:test>
+    <munit:test name="post:\accounts:application\json:mysql-system-api-config-201-application\json-FlowTest" description="Verifying functionality of [post:\accounts:application\json:mysql-system-api-config-201-application\json]">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="mysql-system-api-main" />
+            <munit:enable-flow-source value="post:\accounts:application\json:mysql-system-api-config" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+			<munit-tools:mock-when doc:name="Mock when" doc:id="34c86b00-93f3-478f-bdc2-1922ffc035a8" processor="db:bulk-insert">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute whereValue="f611a7c7-4df1-4330-b2dc-91022af60271" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return>
+					<munit-tools:payload value='#[MunitTools::getResourceAsString("scaffolder/response/post_201_accounts_application_json.json")]' mediaType="application/dw" />
+					<munit-tools:attributes value="#[{'statusCode' : 201}]" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Event" doc:id="1d244cc6-c38e-4f98-b35f-453dd3d0d5eb" >
+				<munit:payload value="#[MunitTools::getResourceAsString('scaffolder/request/post_accounts_application_json.json')]" mediaType="application/dw" />
+			</munit:set-event>
+        </munit:behavior>
+        <munit:execution>
+			<flow-ref doc:name="postAccountsFlow" doc:id="23b5d24f-6f11-4f9a-bb68-2221faef82d5" name="postAccountsFlow"/>
+        </munit:execution>
+		<munit:validation>
+            <munit-tools:assert-that expression="#[attributes.statusCode]" is="#[MunitTools::equalTo(201)]" message="The HTTP Status code is not correct!" doc:name="Assert That Status Code is 201" />
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" message="The response payload is not correct!" doc:name="Assert That - Payload is Expected" />
+        </munit:validation>
+    </munit:test>
+    <munit:test name="post:\accounts:application\json:mysql-system-api-config-500-application\json-FlowTest" description="Verifying functionality of [post:\accounts:application\json:mysql-system-api-config-500-application\json]" expectedErrorType="DB:CONNECTIVITY">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="mysql-system-api-main" />
+            <munit:enable-flow-source value="post:\accounts:application\json:mysql-system-api-config" />
+        </munit:enable-flow-sources>
+		<munit:behavior>
+			<munit-tools:mock-when doc:name="Mock when" doc:id="eb135206-49c4-4afd-b9ca-8c8190c029c3" processor="db:bulk-insert">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute whereValue="f611a7c7-4df1-4330-b2dc-91022af60271" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value='#[MunitTools::getResourceAsString("scaffolder/response/post_500_accounts_application_json.json")]' mediaType="application/dw" />
+					<munit-tools:error typeId="DB:CONNECTIVITY" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Event" doc:id="a5aceb28-ff65-4951-9644-1e504ea3e027">
+				<munit:payload value="#[MunitTools::getResourceAsString('scaffolder/request/post_accounts_application_json.json')]" mediaType="application/dw" />
+			</munit:set-event>
+        </munit:behavior>
+		<munit:execution>
+			<flow-ref doc:name="postAccountsFlow" doc:id="151ae84e-ce17-4f4d-a7d7-8826ca8597e3" name="postAccountsFlow"/>
+        </munit:execution>
+		<munit:validation>
+            <munit-tools:assert-that expression="#[payload.status]" is='#[MunitTools::equalTo("Failed")]' message="The response payload is not correct!" doc:name="Assert That - Payload is Expected" />
+        </munit:validation>
+    </munit:test>
+    <munit:test name="get:\accounts\name:mysql-system-api-config-200-application\json-FlowTest" description="Verifying functionality of [get:\accounts\name:mysql-system-api-config-200-application\json]">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="mysql-system-api-main" />
+            <munit:enable-flow-source value="get:\accounts\name:mysql-system-api-config" />
+        </munit:enable-flow-sources>
+        <munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="1f15ceee-4f1a-4597-b053-3da32a8656a5" processor="db:select">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="61e0c36c-8534-4993-86b0-a27b4179a59a" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value='#[MunitTools::getResourceAsString("scaffolder/response/get_200_accounts_name_application_json.json")]' mediaType="application/dw" />
+					<munit-tools:attributes value="#[{'statusCode' : 200}]" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Event" doc:id="b76acc1c-b904-435f-a18c-bc23bbcb0eda" >
+				<munit:attributes value="#[{queryParams: {'accountName' : 'Capgemini'} }]" />
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution>
+			<flow-ref doc:name="getAccountByNameFlow" doc:id="ad84241b-781a-4951-937e-bd9a3b0a6ead" name="getAccountByNameFlow"/>
+        </munit:execution>
+		<munit:validation>
+            <munit-tools:assert-that expression="#[attributes.statusCode]" is="#[MunitTools::equalTo(200)]" message="The HTTP Status code is not correct!" doc:name="Assert That Status Code is 200" />
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" message="The response payload is not correct!" doc:name="Assert That - Payload is Expected" />
+        </munit:validation>
+    </munit:test>
+</mule>

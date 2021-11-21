@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+	<db:config name="Mysql_Database_Config" doc:name="Database Config" doc:id="9cd3454b-9942-4683-85fe-f6fed2280ea6" >
+		<db:my-sql-connection host="${secure::mysql.host}" port="${secure::mysql.port}" user="${secure::mysql.username}" password="${secure::mysql.password}" database="${secure::mysql.database}" />
+	</db:config>
+	<configuration doc:name="Configuration" doc:id="4b4042fe-420f-43b1-b94c-9ee32644845b" defaultErrorHandler-ref="globalError_Handler" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="0dbe6fa2-e925-4385-aeb2-080151a23c39" file="properties/mysql-system-DEV.properties" key="12345" >
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+	<error-handler name="globalError_Handler" doc:id="f8305936-e47f-4f84-a982-774e2e9aac6f" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c92c9ea4-4421-4272-ac5f-d84c5a09ba2e" >
+			<ee:transform doc:name="Transform Message" doc:id="242e3f51-87dc-4c54-a1b6-004b0b2a048e" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorMessage : error.description,
+	failingComponent : error.failingComponent
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+	</error-handler>
+</mule>

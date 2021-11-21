@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="0fcf5834-10dc-4828-971c-526fa725cecc" >
+		<http:listener-connection host="0.0.0.0" port="8084" />
+	</http:listener-config>
+	<flow name="getAccountByNameFlow" doc:id="9e093383-d679-43fd-b659-1456da02ae28" >
+		<db:select doc:name="Select" doc:id="61e0c36c-8534-4993-86b0-a27b4179a59a" config-ref="Mysql_Database_Config">
+			<db:sql ><![CDATA[SELECT Id, LastModifiedDate FROM Account WHERE Name = :name]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{ name : attributes.queryParams.accountName }]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="d04e33e8-9a6f-434f-bcda-3291683e7826" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+if(sizeOf(payload)>0)
+{
+	Id: payload[0].Id as String,
+	LastModifiedDate: payload[0].LastModifiedDate as String
+}
+else
+{
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getModifiedAccountsFlow" doc:id="36a6683e-bf91-4aad-b44c-29406c133f90" >
+		<db:select doc:name="Select" doc:id="156e6ce5-a1a3-4545-a1b2-47f9d3ae07f8" config-ref="Mysql_Database_Config">
+			<db:sql ><![CDATA[SELECT Name, AccountNumber,BillingCity,BillingCountry,BillingPostalCode, Description, LastModifiedDate, NumberOfEmployees, 
+Phone, Type FROM Account
+WHERE LastModifiedDate > :lastUpdate AND LastModifiedById != :lastModifiedById
+ORDER BY LastModifiedDate ASC
+]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{ lastUpdate : attributes.queryParams.LastModifiedDate, lastModifiedById : "'" ++ attributes.queryParams.LastModifiedById ++ "'"}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="ca96b159-973e-4f67-a37f-9d2c11018e7e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map {
+	Name: $.Name default "",
+	AccountNumber: $.AccountNumber default "",
+	BillingCity: $.BillingCity default "",
+	BillingCountry: $.BillingCountry default "",
+	BillingPostalCode: $.BillingPostalCode default "",
+	Description: $.Description default "",
+	LastModifiedDate: $.LastModifiedDate as String,
+	NumberOfEmployees: $.NumberOfEmployees default 0,
+	Phone: $.Phone default "",
+	Type: $.Type default ""	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="postAccountsFlow" doc:id="bbcfaacf-b4b9-4244-847d-4bf828bda3eb" >
+		<ee:transform doc:name="Transform Message" doc:id="82505d2a-660d-4595-80e5-0dfcfd7b33c2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	Type: payload01.Type,
+	Description: payload01.Description,
+	BillingCountry: payload01.BillingCountry,
+	BillingCity: payload01.BillingCity,
+	Phone: payload01.Phone,
+	BillingPostalCode: payload01.BillingPostalCode,
+	NumberOfEmployees: if(payload01.NumberOfEmployees != null) payload01.NumberOfEmployees as String else null,
+	AccountNumber: payload01.AccountNumber,
+	Name: payload01.Name
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<try doc:name="Try" doc:id="d2558ce9-e400-4494-afff-538aaa86dc4b" >
+			<db:bulk-insert doc:name="Bulk insert" doc:id="f611a7c7-4df1-4330-b2dc-91022af60271" config-ref="Mysql_Database_Config">
+			<db:sql><![CDATA[INSERT INTO Account (AccountNumber,Description,Name,NumberOfEmployees,Type,BillingCity,BillingCountry,BillingPostalCode,Phone,LastModifiedById,LastModifiedDate) VALUES 
+(:AccountNumber,:Description,:Name,:NumberOfEmployees,:Type,:BillingCity,:BillingCountry,:BillingPostalCode,:Phone,CURRENT_USER(),CURRENT_TIMESTAMP())]]></db:sql>
+		</db:bulk-insert>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="257fd17a-9877-46b6-a9d7-22e4a3ae9de9" >
+					<ee:transform doc:name="Transform Message" doc:id="afca0399-80eb-48af-a7a4-89859dcd0a0b" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[{
+	id: null,
+	errorMessage : error.detailedDescription,
+	status : "Failed" 
+}]]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Transform Message" doc:id="14742e78-bbc0-4663-958f-c73a291397f4">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map {
+	id : $ ,
+	status : "Success"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="putAccountsFlow" doc:id="2f380a31-5feb-442b-9acf-afae3fd020a0" >
+		<ee:transform doc:name="Transform Message" doc:id="9be15e64-06c3-4537-bf69-9258fb36612c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	Type: payload01.Type,
+	Description: payload01.Description,
+	BillingCountry: payload01.BillingCountry,
+	BillingCity: payload01.BillingCity,
+	Phone: payload01.Phone,
+	BillingPostalCode: payload01.BillingPostalCode,
+	NumberOfEmployees: if(payload01.NumberOfEmployees != null) payload01.NumberOfEmployees as String else null,
+	Id: payload01.Id,
+	AccountNumber: payload01.AccountNumber,
+	Name: payload01.Name
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<try doc:name="Try" doc:id="c828513d-5f67-43bf-94f6-f3e223a93178" >
+			<db:bulk-update doc:name="Bulk update" doc:id="dbb5dc15-a812-4f9e-a16a-3c28366698e2" config-ref="Mysql_Database_Config">
+			<db:sql><![CDATA[UPDATE Account SET AccountNumber = :AccountNumber, Name = :Name,Description = :Description,NumberOfEmployees = :NumberOfEmployees,Type = :Type, Phone = :Phone, BillingCity = :BillingCity,
+BillingCountry = :BillingCountry, BillingPostalCode = :BillingPostalCode, 
+LastModifiedDate = CURRENT_TIMESTAMP(),LastModifiedById = CURRENT_USER() WHERE Id = :Id]]></db:sql>
+		</db:bulk-update>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="de8d8b4f-ff67-4774-ad17-c9112a82fbcf" >
+					<ee:transform doc:name="Transform Message" doc:id="1039f126-1e1b-4896-96d7-c65e1cfe6d8a" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[{
+	id: null,
+	errorMessage : error.detailedDescription,
+	status : "Failed" 
+}]]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Transform Message" doc:id="fca85d7f-f7c3-4916-a3b5-42628e0f8272" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map {
+	id : $,
+	status : "Success"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getLastModifiedDate" doc:id="aab32337-a33d-48e1-910b-66dfcf7279e9" >
+		<db:select doc:name="Select" doc:id="259167f9-3d56-44d8-af2c-d67b3f5ae9d2" config-ref="Mysql_Database_Config">
+			<db:sql ><![CDATA[SELECT MAX(LastModifiedDate) from Account ]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="c5f2f3de-a345-41a5-845e-5529fd3ea3a8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	LastModifiedDate: if(payload."MAX(LastModifiedDate)"[0] != null) payload."MAX(LastModifiedDate)"[0]as DateTime {format: "yyyy-MM-dd'T'HH:mm:59"} else "1900-01-01T00:00:00.000+00:00"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

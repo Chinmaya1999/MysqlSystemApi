@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_bbcfaacf_b4b9_4244_847d_4bf828bda3eb_Input_Payload = Array<{  LastModifiedDate?: String,   Type?: String,   BillingCountry?: String,   Description?: String,   BillingCity?: String,   Phone?: String,   BillingPostalCode?: String,   Id?: String,   NumberOfEmployees?: Number,   LastModifiedById?: String,   AccountNumber?: String,   Name: String,   _?: Any}>
+
